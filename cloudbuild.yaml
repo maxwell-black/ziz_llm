@@ -1,0 +1,29 @@
+steps:
+# 1) Install & build the React frontend
+- name: 'gcr.io/cloud-builders/npm'
+  dir: 'frontend'
+  args: ['ci']
+- name: 'gcr.io/cloud-builders/npm'
+  dir: 'frontend'
+  args: ['run','build']
+
+# 2) Build & push the Docker image (includes backend + static build)
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build','-t','gcr.io/$PROJECT_ID/ziz-llm','.']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push','gcr.io/$PROJECT_ID/ziz-llm']
+
+# 3) Deploy the new image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - run
+    - deploy
+    - ziz-llm-service
+    - --image=gcr.io/$PROJECT_ID/ziz-llm
+    - --region=us-east1
+    - --platform=managed
+    - --quiet
+
+images:
+  - 'gcr.io/$PROJECT_ID/ziz-llm'
