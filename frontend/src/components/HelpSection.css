@@ -1,0 +1,17 @@
+.help-section {
+  padding: 20px;
+  margin-top: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.help-section h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+.help-section p {
+  color: #555;
+  line-height: 1.6;
+}

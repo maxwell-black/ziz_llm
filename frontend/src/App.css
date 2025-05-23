@@ -21,10 +21,10 @@ body {
 
 .App-header {
   background-color: #282c34;
-  padding: 10px 20px; /* Reduced padding */
+  padding: 8px 15px; /* Mobile padding */
   color: white;
   text-align: center;
-  font-size: 1.2rem; /* Slightly smaller header */
+  font-size: 1rem; /* Mobile font size */
   flex-shrink: 0; /* Prevent header from shrinking */
 }
 
@@ -38,7 +38,7 @@ body {
 .messages {
   flex-grow: 1;
   overflow-y: auto; /* Enable scrolling for messages */
-  padding: 20px;
+  padding: 10px; /* Mobile padding */
   display: flex;
   flex-direction: column;
   gap: 10px; /* Spacing between messages */
@@ -47,7 +47,7 @@ body {
 .message {
   padding: 10px 15px;
   border-radius: 15px;
-  max-width: 75%; /* Slightly wider max-width */
+  max-width: 85%; /* Mobile max-width */
   word-wrap: break-word; /* Wrap long words */
   line-height: 1.4;
   position: relative; /* For loading dots */
@@ -102,7 +102,7 @@ body {
 
 .input-area {
   display: flex;
-  padding: 15px;
+  padding: 10px; /* Mobile padding */
   border-top: 1px solid #ddd;
   background-color: #f8f8f8;
   flex-shrink: 0; /* Prevent input area from shrinking */
@@ -110,22 +110,22 @@ body {
 
 .input-area input {
   flex-grow: 1;
-  padding: 10px 15px;
+  padding: 8px 12px; /* Mobile padding */
   border: 1px solid #ccc;
   border-radius: 20px;
   margin-right: 10px;
-  font-size: 1rem;
+  font-size: 0.95rem; /* Mobile font size */
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .input-area button {
-  padding: 10px 20px;
+  padding: 8px 15px; /* Mobile padding */
   border: none;
   background-color: #007bff;
   color: white;
   border-radius: 20px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem; /* Mobile font size */
   transition: background-color 0.2s ease;
 }
 
@@ -138,27 +138,27 @@ body {
    cursor: not-allowed;
 }
 
-/* Basic responsiveness */
-@media (max-width: 600px) {
+/* Styles for screens larger than 600px */
+@media (min-width: 601px) {
   .App-header {
-    font-size: 1rem;
-    padding: 8px 15px;
+    font-size: 1.2rem; /* Desktop font size */
+    padding: 10px 20px; /* Desktop padding */
   }
   .messages {
-    padding: 10px;
+    padding: 20px; /* Desktop padding */
   }
   .message {
-    max-width: 85%;
+    max-width: 75%; /* Desktop max-width */
   }
   .input-area {
-    padding: 10px;
+    padding: 15px; /* Desktop padding */
   }
   .input-area input {
-    padding: 8px 12px;
-    font-size: 0.95rem;
+    padding: 10px 15px; /* Desktop padding */
+    font-size: 1rem; /* Desktop font size */
   }
   .input-area button {
-    padding: 8px 15px;
-    font-size: 0.95rem;
+    padding: 10px 20px; /* Desktop padding */
+    font-size: 1rem; /* Desktop font size */
   }
 }

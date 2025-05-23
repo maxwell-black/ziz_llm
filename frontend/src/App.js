@@ -1,6 +1,9 @@
 // frontend/src/App.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './App.css';
+
+// Dynamically import HelpSection
+const HelpSection = lazy(() => import('./components/HelpSection'));
 
 // Use relative path as Flask backend will serve API from the same origin in Cloud Run
 const SERVER_URL = '/chat';
@@ -9,7 +12,10 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showHelp, setShowHelp] = useState(false); // State for HelpSection visibility
   const messagesEndRef = useRef(null); // Ref to scroll to bottom
+
+  const toggleHelp = () => setShowHelp(prevShowHelp => !prevShowHelp); // Toggle HelpSection
 
   // Function to scroll to the bottom of the chat messages
   const scrollToBottom = () => {
@@ -77,6 +83,9 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>Ž</h1>
+        <button onClick={toggleHelp} className="help-toggle-button" data-testid="toggle-help-button">
+          {showHelp ? 'Hide Help' : 'Show Help'}
+        </button>
       </header>
       <div className="chat-window">
         <div className="messages">
@@ -110,6 +119,11 @@ function App() {
           </button>
         </div>
       </div>
+      {showHelp && (
+        <Suspense fallback={<div className="loading-help" data-testid="help-section-loading">Loading help...</div>}>
+          <HelpSection />
+        </Suspense>
+      )}
     </div>
   );
 }
