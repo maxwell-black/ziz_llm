@@ -1,0 +1,10 @@
+# backend/requirements.txt
+Flask>=2.0
+Flask-Cors
+gunicorn
+langchain>=0.1.0
+langchain-google-genai
+langchain-community  # <-- ADD THIS LINE
+google-cloud-aiplatform
+faiss-cpu
+google-cloud-secret-manager>=2.0.0

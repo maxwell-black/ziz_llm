@@ -1,0 +1,46 @@
+# ~/ziz_llm/.dockerignore
+
+# Docker config files
+Dockerfile
+.dockerignore
+
+# Git repository files
+.git
+.gitignore
+
+# Python cache and artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Python virtual environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Node.js - VERY IMPORTANT to exclude node_modules
+frontend/node_modules/
+frontend/build/ # Exclude frontend build if copying differently, but we copy it explicitly
+frontend/.pnp*
+frontend/.yarn*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Downloaded archives
+backend/*.zip
+
+# IDE / Editor specific files
+.vscode/
+.idea/
+*.swp
