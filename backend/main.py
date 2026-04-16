@@ -59,9 +59,13 @@ try:
             combine_docs_chain_kwargs={"prompt": qa_prompt}
         )
         logging.info("Langchain components initialized successfully.")
-except Exception as e:
-    # Log the full error during initialization for debugging
+except (ValueError, RuntimeError, FileNotFoundError) as e:
+    # Log the specific error during initialization for debugging
     logging.exception(f"CRITICAL Error during Langchain/FAISS initialization: {e}")
+    # llm and qa remain None, the /chat endpoint will return an error
+except Exception as e:
+    # Log any other unexpected errors
+    logging.exception(f"UNEXPECTED Error during Langchain/FAISS initialization: {e}")
     # llm and qa remain None, the /chat endpoint will return an error
 
 # --- Flask Application ---

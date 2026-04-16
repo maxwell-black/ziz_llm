@@ -1,17 +1,19 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 
-// Mock the fetch function
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({ answer: 'Mocked bot response' }),
-  })
-);
-
 beforeEach(() => {
   // Clear all previous mock calls before each test
-  fetch.mockClear();
+  // Mock the fetch function locally per test to avoid bleeding state
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ answer: 'Mocked bot response' }),
+    })
+  );
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 test('renders App and main components', () => {
@@ -71,7 +73,7 @@ test('sending a message and receiving a response', async () => {
   expect(await screen.findByText(/Hello bot/)).toBeInTheDocument();
   
   // Check if fetch was called correctly
-  expect(fetch).toHaveBeenCalledWith('/chat', {
+  expect(global.fetch).toHaveBeenCalledWith('/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: 'Hello bot' }),
@@ -80,7 +82,6 @@ test('sending a message and receiving a response', async () => {
   // Check for loading indicator for bot message
   // The actual loading dots are multiple spans, so we check for the container
   expect(screen.getByText((content, element) => element.classList.contains('loading') && element.classList.contains('bot'))).toBeInTheDocument();
-
 
   // Wait for bot response
   const botResponse = await screen.findByText(/Mocked bot response/);
