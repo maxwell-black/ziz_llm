@@ -1,6 +1,7 @@
 // frontend/src/App.js
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './App.css';
+import { getErrorMessageFromResponse } from './utils/errorUtils';
 
 // Dynamically import HelpSection
 const HelpSection = lazy(() => import('./components/HelpSection'));
@@ -52,14 +53,7 @@ function App() {
       });
 
       if (!response.ok) {
-        // Try to get error message from server response body
-        let errorMsg = `HTTP error! Status: ${response.status}`;
-        try {
-           const errData = await response.json();
-           errorMsg = errData.error || errorMsg;
-        } catch(e) {
-           // Ignore if response body isn't valid JSON
-        }
+        const errorMsg = await getErrorMessageFromResponse(response);
         throw new Error(errorMsg);
       }
 
