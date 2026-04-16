@@ -4,9 +4,9 @@ import textwrap
 import logging # Use logging instead of print for Cloud Run
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from langchain_community.vectorstores import FAISS
+from langchain.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
+from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.prompts import PromptTemplate
 from google.cloud import secretmanager # To get API key
