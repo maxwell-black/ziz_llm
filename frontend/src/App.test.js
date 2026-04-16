@@ -5,6 +5,7 @@ import App from './App';
 global.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
+    status: 200,
     json: () => Promise.resolve({ answer: 'Mocked bot response' }),
   })
 );
@@ -12,6 +13,14 @@ global.fetch = jest.fn(() =>
 beforeEach(() => {
   // Clear all previous mock calls before each test
   fetch.mockClear();
+  // Ensure we mock the default behavior back to a resolved promise since some tests might alter it
+  fetch.mockImplementation(() =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ answer: 'Mocked bot response' }),
+    })
+  );
 });
 
 test('renders App and main components', () => {
