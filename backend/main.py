@@ -3,7 +3,7 @@ import os
 import logging # Use logging instead of print for Cloud Run
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferWindowMemory
@@ -89,6 +89,10 @@ def chat():
     if not query:
         logging.warning("Received empty query in /chat request")
         return jsonify({"error": "Missing 'query' in request body"}), 400
+
+    if len(query) > 1000:
+        logging.warning(f"Received overly long query ({len(query)} chars). Rejecting.")
+        return jsonify({"error": "Query too long. Maximum length is 1000 characters."}), 400
 
     logging.info(f"Received query: {query[:50]}...") # Log snippet
     try:
