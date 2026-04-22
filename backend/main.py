@@ -1,10 +1,9 @@
 # /backend/main.py
 import os
-import textwrap
 import logging # Use logging instead of print for Cloud Run
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferWindowMemory
@@ -50,7 +49,15 @@ try:
         db = FAISS.load_local(index_cache_dir, embeddings, allow_dangerous_deserialization=True)
         llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-pro-latest", temperature=0.7)
         memory = ConversationBufferWindowMemory(memory_key="chat_history", return_messages=True, k=5) # k=5 history window
-        custom_template = """ You are embodying the persona of the AUTHOR (the AUTHOR's name is "Ž") of the texts provided in the Context. Feel free to engage in a disquisition, but this disquisition should treat, explicitly, the topic and themes in the QUESTION. Your response should be in the style of the AUTHOR, mimic the way that he writes. Context: {context} Question: {question} Answer (as the AUTHOR): """
+        custom_template = """
+You are embodying the persona of the AUTHOR (the AUTHOR's name is "Ž") of the texts provided in the Context.
+Feel free to engage in a disquisition, but this disquisition should treat, explicitly, the topic and themes in the QUESTION.
+Your response should be in the style of the AUTHOR, mimic the way that he writes.
+
+Context: {context}
+Question: {question}
+Answer (as the AUTHOR):
+"""
         qa_prompt = PromptTemplate(template=custom_template, input_variables=["question", "context"])
         qa = ConversationalRetrievalChain.from_llm(
             llm=llm,
@@ -59,15 +66,31 @@ try:
             combine_docs_chain_kwargs={"prompt": qa_prompt}
         )
         logging.info("Langchain components initialized successfully.")
-except Exception as e:
-    # Log the full error during initialization for debugging
+except (ValueError, RuntimeError, FileNotFoundError) as e:
+    # Log the specific error during initialization for debugging
     logging.exception(f"CRITICAL Error during Langchain/FAISS initialization: {e}")
+    # llm and qa remain None, the /chat endpoint will return an error
+except Exception as e:
+    # Log any other unexpected errors
+    logging.exception(f"UNEXPECTED Error during Langchain/FAISS initialization: {e}")
     # llm and qa remain None, the /chat endpoint will return an error
 
 # --- Flask Application ---
 # Serve static files from the react_build_dir relative to the app's root
 app = Flask(__name__, static_folder=react_build_dir, static_url_path='/')
-CORS(app) # Enable CORS, useful if you ever separate frontend/backend URLs
+
+# Configure CORS with restricted origins to prevent unauthorized cross-origin requests.
+# In production, the frontend is served from the same origin as the API.
+# Use the ALLOWED_ORIGINS environment variable to specify a comma-separated list of permitted origins.
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
+if allowed_origins:
+    CORS(app, origins=allowed_origins)
+    logging.info(f"CORS enabled for origins: {allowed_origins}")
+else:
+    # If no origins are specified, CORS is not enabled, defaulting to same-origin only.
+    logging.info("CORS is disabled (same-origin only).")
 
 # --- API Endpoint ---
 @app.route('/chat', methods=['POST'])
@@ -86,6 +109,10 @@ def chat():
     if not query:
         logging.warning("Received empty query in /chat request")
         return jsonify({"error": "Missing 'query' in request body"}), 400
+
+    if len(query) > 1000:
+        logging.warning(f"Received overly long query ({len(query)} chars). Rejecting.")
+        return jsonify({"error": "Query too long. Maximum length is 1000 characters."}), 400
 
     logging.info(f"Received query: {query[:50]}...") # Log snippet
     try:
