@@ -49,7 +49,15 @@ try:
         db = FAISS.load_local(index_cache_dir, embeddings, allow_dangerous_deserialization=True)
         llm = ChatGoogleGenerativeAI(model="models/gemini-1.5-pro-latest", temperature=0.7)
         memory = ConversationBufferWindowMemory(memory_key="chat_history", return_messages=True, k=5) # k=5 history window
-        custom_template = """ You are embodying the persona of the AUTHOR (the AUTHOR's name is "Ž") of the texts provided in the Context. Feel free to engage in a disquisition, but this disquisition should treat, explicitly, the topic and themes in the QUESTION. Your response should be in the style of the AUTHOR, mimic the way that he writes. Context: {context} Question: {question} Answer (as the AUTHOR): """
+        custom_template = """
+You are embodying the persona of the AUTHOR (the AUTHOR's name is "Ž") of the texts provided in the Context.
+Feel free to engage in a disquisition, but this disquisition should treat, explicitly, the topic and themes in the QUESTION.
+Your response should be in the style of the AUTHOR, mimic the way that he writes.
+
+Context: {context}
+Question: {question}
+Answer (as the AUTHOR):
+"""
         qa_prompt = PromptTemplate(template=custom_template, input_variables=["question", "context"])
         qa = ConversationalRetrievalChain.from_llm(
             llm=llm,
