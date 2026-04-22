@@ -70,7 +70,19 @@ except Exception as e:
 # --- Flask Application ---
 # Serve static files from the react_build_dir relative to the app's root
 app = Flask(__name__, static_folder=react_build_dir, static_url_path='/')
-CORS(app) # Enable CORS, useful if you ever separate frontend/backend URLs
+
+# Configure CORS with restricted origins to prevent unauthorized cross-origin requests.
+# In production, the frontend is served from the same origin as the API.
+# Use the ALLOWED_ORIGINS environment variable to specify a comma-separated list of permitted origins.
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
+if allowed_origins:
+    CORS(app, origins=allowed_origins)
+    logging.info(f"CORS enabled for origins: {allowed_origins}")
+else:
+    # If no origins are specified, CORS is not enabled, defaulting to same-origin only.
+    logging.info("CORS is disabled (same-origin only).")
 
 # --- API Endpoint ---
 @app.route('/chat', methods=['POST'])
