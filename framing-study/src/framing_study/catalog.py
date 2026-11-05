@@ -79,6 +79,10 @@ JUDGE_ALLOW_HOSTS: tuple[str, ...] = (
     "api.openai.com",
     "api.anthropic.com",
     "generativelanguage.googleapis.com",
+    # gpt-5.4-mini is reached through OpenRouter's OpenAI-compatible API
+    # because this project has no platform.openai.com key. Same hosts on
+    # every condition.
+    "openrouter.ai",
 )
 
 HARBOR_SYSTEM_PROMPT_NOTE = (

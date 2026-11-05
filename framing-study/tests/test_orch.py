@@ -356,7 +356,10 @@ def test_smoke_refuses_when_spend_limit_omitted(tmp_path, capsys):
 
 
 def test_smoke_refuses_when_prices_empty(tmp_path, capsys):
-    config = _temp_config(tmp_path)
+    text = (ROOT / "config" / "pilot.yaml").read_text(encoding="utf-8")
+    text = text.replace("output_dir: runs", f"output_dir: {tmp_path / 'runs'}")
+    text = text.split("prices_usd_per_million:", 1)[0] + "prices_usd_per_million: {}\n"
+    config = _temp_config(tmp_path, text)
     code = main(["--config", str(config), "smoke", "--spend-limit", "10"])
     captured = capsys.readouterr()
     assert code == 2
@@ -375,8 +378,11 @@ def test_yaml_spend_limit_is_not_a_default(tmp_path, capsys):
     assert "missing spend limit" in captured.err
 
 
-def test_cost_prints_unknown_components_when_prices_empty(capsys):
-    code = main(["cost"])
+def test_cost_prints_unknown_components_when_prices_empty(tmp_path, capsys):
+    text = (ROOT / "config" / "pilot.yaml").read_text(encoding="utf-8")
+    text = text.split("prices_usd_per_million:", 1)[0] + "prices_usd_per_million: {}\n"
+    config = _temp_config(tmp_path, text)
+    code = main(["--config", str(config), "cost"])
     captured = capsys.readouterr()
     assert code == 0
     for label in ("generation_usd: unknown", "judging_usd: unknown", "infra_usd: unknown"):

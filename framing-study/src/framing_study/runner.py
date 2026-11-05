@@ -78,6 +78,7 @@ def harbor_run_argv(
     model: str,
     jobs_dir: Path,
     n_concurrent: int = 1,
+    max_turns: int | None = None,
 ) -> list[str]:
     """Argv matching redlinebench ``src/reproduce.py`` ``run_harbor`` for one task.
 
@@ -102,6 +103,8 @@ def harbor_run_argv(
         str(jobs_dir),
         "--yes",
     ]
+    if max_turns is not None:
+        argv.extend(["--ak", f"max_turns={int(max_turns)}"])
 
 
 def redlinebench_reproduce_argv(
@@ -423,6 +426,7 @@ def _generate(
             model=slot["model"],
             jobs_dir=jobs_dir,
             n_concurrent=int(settings.get("n_concurrent") or 1),
+            max_turns=settings.get("max_turns"),
         )
         completed = execute(argv, env, attempt_dir / "logs")
         artifact = find_contract_artifact(jobs_dir)
