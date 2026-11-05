@@ -326,6 +326,16 @@ def test_harbor_argv_uses_shared_terminus_agent():
     joined = " ".join(argv)
     assert "STOCK" not in joined
     assert "/tmp/isolated/tasks/redline-s1-t1-g01a" in joined
+    capped = harbor_run_argv(
+        task_dir=Path("/tmp/isolated/tasks/redline-s1-t1-g01a"),
+        agent="terminus-2",
+        model="openai/example",
+        jobs_dir=Path("/tmp/isolated/jobs"),
+        max_turns=24,
+    )
+    assert "--ak" in capped
+    assert "max_turns=24" in capped
+    assert "STOCK" not in " ".join(capped)
 
 
 def _temp_config(tmp_path: Path, text: str | None = None) -> Path:

@@ -88,7 +88,7 @@ def harbor_run_argv(
     """
     if agent != AGENT:
         raise ValueError(f"agent must be {AGENT} for every model, got {agent}")
-    return [
+    argv = [
         "harbor",
         "run",
         "-p",
@@ -105,6 +105,7 @@ def harbor_run_argv(
     ]
     if max_turns is not None:
         argv.extend(["--ak", f"max_turns={int(max_turns)}"])
+    return argv
 
 
 def redlinebench_reproduce_argv(
@@ -155,9 +156,11 @@ def child_environ(base: dict[str, str] | None = None) -> dict[str, str]:
     Drops judge-panel overrides and framing labels. Does not print values.
     """
     env = dict(os.environ if base is None else base)
-    env.pop("JUDGE_PANEL", None)
-    env.pop("JUDGE_MODEL", None)
     env.pop("FRAMING_CONDITION", None)
+    # task.toml interpolates these names. Harbor exits if they are absent.
+    # Blank values keep tests/judge.py on DEFAULT_JUDGE_PANEL.
+    env["JUDGE_PANEL"] = ""
+    env["JUDGE_MODEL"] = ""
     return env
 
 
