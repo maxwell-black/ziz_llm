@@ -1,0 +1,11 @@
+--- redline-s2-t1-g01a/STOCK/instruction.md
++++ redline-s2-t1-g01a/STOCK_PLUS_METAPHOR/instruction.md
+@@ -64,6 +64,8 @@
+ - **`mark_reserved.py CONTRACT.docx --start p-NNN --end p-NNN --comment "…" --author "…"`** — when you're deleting an entire numbered section, this script tracked-deletes the body content and tracked-inserts `Reserved.` into the first paragraph, preserving the heading and downstream numbering. Use it instead of `propose_edits.py` for whole-section removal.
+ 
+ ## Redlining hygiene
++
++Treat the agreement as an existing software system, its provisions as interacting components, and the requested revisions as patches to that system.
+ 
+ Edits should look like a senior lawyer's work product, not a redline-bot's:
+ 

@@ -1,0 +1,648 @@
+{
+  "synthetic": true,
+  "label": "synthetic",
+  "pins": {
+    "redlinebench_repo": "https://github.com/crosbylegal/redline-bench",
+    "redlinebench_git_sha": "b29d1113af5d98e2d577f4f17673ebb72834f107",
+    "dataset_repo": "crosbylegal/RedlineBench",
+    "dataset_revision": "eee1b6790982ed1279e86bec7616b662a61993e6",
+    "harbor_version": "0.25.0",
+    "harbor_agent": "terminus-2",
+    "dataset_license": "CC-BY-4.0",
+    "code_license": "MIT"
+  },
+  "models": [
+    "model-alpha",
+    "model-beta"
+  ],
+  "harness": "terminus-2",
+  "seed": 7,
+  "repetitions": 1,
+  "input_groups": [
+    "g1",
+    "g2"
+  ],
+  "conditions": [
+    "TASK_ONLY",
+    "STOCK",
+    "STOCK_PLUS_METAPHOR",
+    "MATCHED_SOFTWARE_REPLACEMENT"
+  ],
+  "instruction_summary": {
+    "designated_spans": [
+      "synthetic span one",
+      "synthetic span two",
+      "synthetic span three"
+    ],
+    "condition_2_sentence": "Synthetic condition 2 sentence."
+  },
+  "records": [
+    {
+      "model": "model-alpha",
+      "condition": "TASK_ONLY",
+      "input_group": "g1",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 2,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 3,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 1,
+        "deletion_count": 0,
+        "tracked_change_count": 1,
+        "comment_count": 0
+      }
+    },
+    {
+      "model": "model-alpha",
+      "condition": "STOCK",
+      "input_group": "g1",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 1,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 1,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 1,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 2,
+        "deletion_count": 1,
+        "tracked_change_count": 3,
+        "comment_count": 1
+      }
+    },
+    {
+      "model": "model-alpha",
+      "condition": "STOCK_PLUS_METAPHOR",
+      "input_group": "g1",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 9,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 1,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 3,
+        "deletion_count": 1,
+        "tracked_change_count": 4,
+        "comment_count": 1
+      }
+    },
+    {
+      "model": "model-alpha",
+      "condition": "MATCHED_SOFTWARE_REPLACEMENT",
+      "input_group": "g1",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 3,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 2,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 1,
+        "deletion_count": 1,
+        "tracked_change_count": 2,
+        "comment_count": 2
+      }
+    },
+    {
+      "model": "model-alpha",
+      "condition": "TASK_ONLY",
+      "input_group": "g2",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 2,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 3,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 1,
+        "deletion_count": 0,
+        "tracked_change_count": 1,
+        "comment_count": 0
+      }
+    },
+    {
+      "model": "model-alpha",
+      "condition": "STOCK",
+      "input_group": "g2",
+      "repetition": 0,
+      "invalid_document": false,
+      "retries": 0,
+      "gate_passed": true,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": false,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "would-pass",
+              "weight": 1,
+              "votes": [
+                "PASS"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 6,
+        "deletion_count": 3,
+        "tracked_change_count": 9,
+        "comment_count": 3
+      }
+    },
+    {
+      "model": "model-alpha",
+      "condition": "STOCK_PLUS_METAPHOR",
+      "input_group": "g2",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 4,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 1,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 3,
+        "deletion_count": 1,
+        "tracked_change_count": 4,
+        "comment_count": 1
+      }
+    },
+    {
+      "model": "model-alpha",
+      "condition": "MATCHED_SOFTWARE_REPLACEMENT",
+      "input_group": "g2",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 11,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 9,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 1,
+        "deletion_count": 1,
+        "tracked_change_count": 2,
+        "comment_count": 2
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "TASK_ONLY",
+      "input_group": "g1",
+      "repetition": 0,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 3,
+          "rubrics": [
+            {
+              "id": "partial-panel",
+              "weight": 1,
+              "votes": [
+                "PASS",
+                "PASS"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 5,
+        "deletion_count": 3,
+        "tracked_change_count": 8,
+        "comment_count": 2
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "STOCK",
+      "input_group": "g1",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 2,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 3,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 2,
+        "deletion_count": 1,
+        "tracked_change_count": 3,
+        "comment_count": 1
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "STOCK_PLUS_METAPHOR",
+      "input_group": "g1",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 7,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 3,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 3,
+        "deletion_count": 1,
+        "tracked_change_count": 4,
+        "comment_count": 1
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "MATCHED_SOFTWARE_REPLACEMENT",
+      "input_group": "g1",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 1,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 1,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 1,
+        "deletion_count": 1,
+        "tracked_change_count": 2,
+        "comment_count": 2
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "TASK_ONLY",
+      "input_group": "g2",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 3,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 7,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 1,
+        "deletion_count": 0,
+        "tracked_change_count": 1,
+        "comment_count": 0
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "STOCK",
+      "input_group": "g2",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 2,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 3,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 2,
+        "deletion_count": 1,
+        "tracked_change_count": 3,
+        "comment_count": 1
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "STOCK_PLUS_METAPHOR",
+      "input_group": "g2",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 9,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 1,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 3,
+        "deletion_count": 1,
+        "tracked_change_count": 4,
+        "comment_count": 1
+      }
+    },
+    {
+      "model": "model-beta",
+      "condition": "MATCHED_SOFTWARE_REPLACEMENT",
+      "input_group": "g2",
+      "repetition": 0,
+      "gate_passed": true,
+      "invalid_document": false,
+      "retries": 0,
+      "variants": [
+        {
+          "variant": "v1",
+          "gate_passed": true,
+          "n_voters": 1,
+          "rubrics": [
+            {
+              "id": "pos-pass",
+              "weight": 9,
+              "votes": [
+                "PASS"
+              ]
+            },
+            {
+              "id": "pos-fail",
+              "weight": 11,
+              "votes": [
+                "FAIL"
+              ]
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "insertion_count": 1,
+        "deletion_count": 1,
+        "tracked_change_count": 2,
+        "comment_count": 2
+      }
+    }
+  ],
+  "usage": {
+    "estimated": {
+      "total_usd": 12.5,
+      "input_tokens": 1000,
+      "output_tokens": 200
+    },
+    "reported": {
+      "total_usd": null,
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  },
+  "human_audit": []
+}
