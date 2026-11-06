@@ -5,57 +5,7 @@
   "executed": false,
   "smoke_executed": false,
   "pilot_executed": false,
-  "reason": "Live generation was not started. Preflight blocked before any model call.",
-  "blocked_reasons": [
-    "missing provider env: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY",
-    "docker is missing",
-    "harbor is missing",
-    "egress is uncontrolled; Harbor is missing or older than 0.20 and cannot enforce task.toml network_mode"
-  ],
-  "providers": [
-    {
-      "name": "OPENAI_API_KEY",
-      "status": "unset"
-    },
-    {
-      "name": "ANTHROPIC_API_KEY",
-      "status": "unset"
-    },
-    {
-      "name": "GEMINI_API_KEY",
-      "status": "unset"
-    },
-    {
-      "name": "GOOGLE_GENERATIVE_AI_API_KEY",
-      "status": "unset"
-    }
-  ],
-  "docker": {
-    "status": "missing",
-    "path": ""
-  },
-  "harbor": {
-    "status": "missing",
-    "configured": "0.25.0",
-    "version_text": ""
-  },
-  "dataset": {
-    "ok": true,
-    "pin_matches": true,
-    "recorded_sha": "eee1b6790982ed1279e86bec7616b662a61993e6",
-    "expected_sha": "eee1b6790982ed1279e86bec7616b662a61993e6",
-    "missing_tasks": [],
-    "status": "present"
-  },
-  "transform": {
-    "ok": true,
-    "status": "passed",
-    "detail": "checked 7 representative instructions"
-  },
-  "egress": {
-    "state": "uncontrolled",
-    "detail": "egress is uncontrolled; Harbor is missing or older than 0.20 and cannot enforce task.toml network_mode"
-  },
-  "code_sha": "b29d1113af5d98e2d577f4f17673ebb72834f107",
+  "reason": "No scored model outputs yet. A smoke generation may be in progress under runs/smoke, which is gitignored. The earlier preflight block (missing keys, Docker, and Harbor) is resolved. openai/gpt-5.4-mini is called through OpenRouter under the native model id. Do not read this file as a score.",
+  "blocked_reasons": [],
   "dataset_sha": "eee1b6790982ed1279e86bec7616b662a61993e6"
 }

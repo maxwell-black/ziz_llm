@@ -29,7 +29,8 @@ from framing_study.catalog import (  # noqa: E402
     smoke_group,
 )
 from framing_study.cli import main  # noqa: E402
-from framing_study.isolate import apply_network_restriction, redact  # noqa: E402
+from framing_study.isolate import apply_network_restriction, ensure_terminus_packages, redact  # noqa: E402
+from framing_study.runner import child_environ  # noqa: E402
 from framing_study.manifest import build_manifest, open_manifest, save_manifest  # noqa: E402
 from framing_study.preflight import provider_env_report  # noqa: E402
 from framing_study.runner import (  # noqa: E402
@@ -309,6 +310,30 @@ def test_network_restriction_is_identical_and_unlabeled():
     assert 'network_mode = "allowlist"' in first
     for label in ("STOCK", "TASK_ONLY", "METAPHOR", "MATCHED_SOFTWARE"):
         assert label not in first
+
+
+def test_child_environ_does_not_redirect_anthropic():
+    env = child_environ(
+        {
+            "OPENAI_API_BASE": "https://openrouter.ai/api/v1",
+            "OPENAI_BASE_URL": "https://openrouter.ai/api/v1",
+            "OPENROUTER_API_KEY": "present",
+            "PYTHONPATH": "/already",
+        }
+    )
+    assert "OPENAI_API_BASE" not in env
+    assert "OPENAI_BASE_URL" not in env
+    assert env["OPENAI_API_KEY"] == ""
+    assert env["PYTHONPATH"].startswith(str(Path(__file__).resolve().parents[1] / "runtime"))
+    assert env["JUDGE_PANEL"] == ""
+
+
+def test_terminus_packages_are_added_once():
+    source = "ca-certificates curl git unzip \\\n"
+    once = ensure_terminus_packages(source)
+    twice = ensure_terminus_packages(once)
+    assert once == twice
+    assert "tmux asciinema" in once
 
 
 def test_harbor_argv_uses_shared_terminus_agent():

@@ -154,9 +154,23 @@ def child_environ(base: dict[str, str] | None = None) -> dict[str, str]:
     """Environment for Harbor and judge subprocesses.
 
     Drops judge-panel overrides and framing labels. Does not print values.
+    A global OpenAI base URL also redirects Anthropic's messages path, so
+    it is removed. The native ``openai/gpt-5.4-mini`` id is aliased to
+    OpenRouter by ``runtime/sitecustomize.py`` when that key is present.
     """
     env = dict(os.environ if base is None else base)
     env.pop("FRAMING_CONDITION", None)
+    env.pop("OPENAI_API_BASE", None)
+    env.pop("OPENAI_BASE_URL", None)
+    if env.get("OPENROUTER_API_KEY"):
+        # Harbor interpolates ${OPENAI_API_KEY} and exits when the name is
+        # absent. Blank keeps that interpolation off the OpenRouter key.
+        env.setdefault("OPENAI_API_KEY", "")
+        if env.get("OPENAI_API_KEY") == env.get("OPENROUTER_API_KEY"):
+            env["OPENAI_API_KEY"] = ""
+        runtime = str(Path(__file__).resolve().parents[2] / "runtime")
+        prior = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = runtime if not prior else runtime + os.pathsep + prior
     # task.toml interpolates these names. Harbor exits if they are absent.
     # Blank values keep tests/judge.py on DEFAULT_JUDGE_PANEL.
     env["JUDGE_PANEL"] = ""

@@ -102,6 +102,22 @@ def network_restriction_ready(sample_toml: str) -> bool:
     )
 
 
+def ensure_terminus_packages(dockerfile: str) -> str:
+    """Install tmux and asciinema in the task image.
+
+    Terminus-2 starts a tmux session after the network lock, so apt inside
+    the running container cannot fetch them. The same packages are added
+    for every condition. The rest of the Dockerfile stays as published.
+    """
+    needed = ("tmux", "asciinema")
+    if all(package in dockerfile for package in needed):
+        return dockerfile
+    needle = "ca-certificates curl git unzip"
+    if needle not in dockerfile:
+        raise ValueError("Dockerfile has no apt package line for terminus tools")
+    return dockerfile.replace(needle, needle + " tmux asciinema", 1)
+
+
 def prepare_agent_workspace(
     *,
     dest: Path,
@@ -140,6 +156,11 @@ def prepare_agent_workspace(
     if contract.read_bytes() != source_contract.read_bytes():
         raise RuntimeError("workspace contract does not match the dataset file")
     (task_dir / "instruction.md").write_text(transformed_instruction, encoding="utf-8")
+    dockerfile = task_dir / "environment" / "Dockerfile"
+    dockerfile.write_text(
+        ensure_terminus_packages(dockerfile.read_text(encoding="utf-8")),
+        encoding="utf-8",
+    )
     toml_path = task_dir / "task.toml"
     toml_path.write_text(
         apply_network_restriction(toml_path.read_text(encoding="utf-8")),

@@ -182,11 +182,15 @@ def preflight_report(
 
     providers = provider_env_report(environ)
     present = {row["name"]: row["status"] == "set" for row in providers}
-    missing_keys = [
-        name
-        for name in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY")
-        if not present[name]
-    ]
+    # gpt-5.4-mini is called through OpenRouter when that key is present
+    # and no platform.openai.com key is. The alias lives in the child
+    # interpreter; this check only decides whether a live run may start.
+    openai_ready = present["OPENAI_API_KEY"] or bool(environ.get("OPENROUTER_API_KEY"))
+    missing_keys = []
+    if not openai_ready:
+        missing_keys.append("OPENAI_API_KEY")
+    if not present["ANTHROPIC_API_KEY"]:
+        missing_keys.append("ANTHROPIC_API_KEY")
     if not present["GEMINI_API_KEY"] and not present["GOOGLE_GENERATIVE_AI_API_KEY"]:
         missing_keys.append("GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY")
     if missing_keys:
@@ -260,6 +264,11 @@ def preflight_report(
         "blocked": bool(unique),
         "blocked_reasons": unique,
         "providers": providers,
+        "openai_route": (
+            "openrouter"
+            if not present["OPENAI_API_KEY"] and environ.get("OPENROUTER_API_KEY")
+            else "openai"
+        ),
         "docker": docker,
         "harbor": harbor,
         "dataset": dataset,
@@ -283,6 +292,8 @@ def format_preflight(report: dict) -> str:
     lines = []
     for row in report["providers"]:
         lines.append(f"{row['name']}: {row['status']}")
+    if report.get("openai_route") == "openrouter":
+        lines.append("openai_route: openrouter (native id openai/gpt-5.4-mini)")
     lines.append(f"docker: {report['docker']['status']}")
     lines.append(
         "harbor: {status} configured={configured}".format(

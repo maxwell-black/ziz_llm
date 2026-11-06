@@ -29,14 +29,16 @@ Live model calls are blocked until provider keys are in the environment and an e
 
 Named environment variables:
 
-- `OPENAI_API_KEY`
+- `OPENAI_API_KEY`, or `OPENROUTER_API_KEY` when the native `openai/gpt-5.4-mini` id is reached through OpenRouter
 - `ANTHROPIC_API_KEY`
 - `GEMINI_API_KEY`
 - `GOOGLE_GENERATIVE_AI_API_KEY`
 
-Set those variables in the environment yourself. Do not paste keys into chat.
+Set those variables in the environment yourself. Do not paste keys into chat. Do not set `OPENAI_API_BASE`: a global base also redirects Anthropic. The child process aliases only `openai/gpt-5.4-mini` to OpenRouter and leaves the other two providers on their own endpoints.
 
-As of implementation, this environment had those variables unset, Docker and Harbor were not installed, and no pilot generations were run. This README has no results table.
+The task image also installs `tmux` and `asciinema`. Terminus-2 needs them after the network lock, so they cannot be fetched with apt inside the running container. That addition is the same for every condition.
+
+This README has no results table. `results/not_executed.json` stays free of model scores until a run finishes.
 
 ## Install
 
