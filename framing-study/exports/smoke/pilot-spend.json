@@ -1,0 +1,12 @@
+{
+  "scope": "pilot",
+  "kind": "planning_ceiling",
+  "total_usd": "48.960000",
+  "generation_usd": "20.736000",
+  "judging_usd": "28.224000",
+  "infra_usd": "0.000000",
+  "in_flight_usd": "0.000000",
+  "source": "python3 -m framing_study cost",
+  "prices": "config/pilot.yaml prices_usd_per_million",
+  "note": "Planning ceiling for the later pilot. Not a measured invoice and not the smoke generation total. A pilot run refuses unless --spend-limit covers 48.960000 while in-flight is 0. Smoke Harbor generation spend, reported separately, is 0.819347 USD. Judge USD for the smoke was not recorded."
+}
