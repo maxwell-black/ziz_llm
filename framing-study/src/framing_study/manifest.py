@@ -80,7 +80,9 @@ def study_settings(config: dict) -> dict:
         "harbor_version": str(config.get("harbor_version") or ""),
         "max_infrastructure_retries": int(config["max_infrastructure_retries"]),
         "n_concurrent": 1,
-        "max_turns": int(config.get("max_turns") or 24),
+        "max_turns": (
+            None if config.get("max_turns") in (None, "") else int(config["max_turns"])
+        ),
         "max_tokens": None,
         "temperature": None,
         "judge_panel_override": False,

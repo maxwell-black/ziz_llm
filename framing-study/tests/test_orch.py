@@ -37,7 +37,7 @@ from framing_study.isolate import (  # noqa: E402
     redact,
 )
 from framing_study.runner import child_environ, find_contract_artifact, panel_grade_is_complete  # noqa: E402
-from framing_study.manifest import build_manifest, open_manifest, save_manifest  # noqa: E402
+from framing_study.manifest import build_manifest, open_manifest, save_manifest, study_settings  # noqa: E402
 from framing_study.preflight import provider_env_report  # noqa: E402
 from framing_study.runner import (  # noqa: E402
     harbor_run_argv,
@@ -397,6 +397,7 @@ def test_harbor_argv_uses_shared_terminus_agent():
     assert "--agent-kwarg" not in argv
     joined = " ".join(argv)
     assert "STOCK" not in joined
+    assert "max_turns" not in joined
     assert "/tmp/isolated/tasks/redline-s1-t1-g01a" in joined
     capped = harbor_run_argv(
         task_dir=Path("/tmp/isolated/tasks/redline-s1-t1-g01a"),
@@ -408,6 +409,8 @@ def test_harbor_argv_uses_shared_terminus_agent():
     assert "--ak" in capped
     assert "max_turns=24" in capped
     assert "STOCK" not in " ".join(capped)
+    assert study_settings({"max_infrastructure_retries": 2})["max_turns"] is None
+    assert study_settings({"max_infrastructure_retries": 2, "max_turns": 24})["max_turns"] == 24
 
 
 def _temp_config(tmp_path: Path, text: str | None = None) -> Path:
