@@ -47,7 +47,7 @@ def is_infrastructure_failure(*, status_code: int | None = None, kind: str | Non
     """
     if kind in {"low_score", "bad_score", "validity_gate", "integrity", "other"}:
         return False
-    if kind in {"timeout", "connection_error", "http_429", "http_5xx"}:
+    if kind in {"timeout", "connection_error", "http_429", "http_5xx", "missing_module"}:
         return True
     if status_code == 429:
         return True
@@ -66,6 +66,8 @@ def classify_process_failure(returncode: int, stderr: str) -> str | None:
         return "timeout"
     if _CONNECTION.search(text):
         return "connection_error"
+    if "ModuleNotFoundError" in text or "No module named" in text:
+        return "missing_module"
     if _HTTP_5XX.search(text) and "reward" not in text.lower():
         return "http_5xx"
     return "other"
@@ -102,6 +104,9 @@ def harbor_run_argv(
         "--jobs-dir",
         str(jobs_dir),
         "--yes",
+        # The egress sidecar breaks TLS to the judge APIs. The same
+        # tests/judge.py runs on the host after the contract is collected.
+        "--disable-verification",
     ]
     if max_turns is not None:
         argv.extend(["--ak", f"max_turns={int(max_turns)}"])
@@ -150,13 +155,15 @@ def judge_argv(*, judge_py: Path, contract: Path, out_dir: Path) -> list[str]:
     ]
 
 
-def child_environ(base: dict[str, str] | None = None) -> dict[str, str]:
+def child_environ(base: dict[str, str] | None = None, model: str | None = None) -> dict[str, str]:
     """Environment for Harbor and judge subprocesses.
 
     Drops judge-panel overrides and framing labels. Does not print values.
     A global OpenAI base URL also redirects Anthropic's messages path, so
     it is removed. The native ``openai/gpt-5.4-mini`` id is aliased to
     OpenRouter by ``runtime/sitecustomize.py`` when that key is present.
+    Harbor refuses to start an ``openai/`` model when ``OPENAI_API_KEY`` is
+    empty, so that one case receives the OpenRouter key and still no base URL.
     """
     env = dict(os.environ if base is None else base)
     env.pop("FRAMING_CONDITION", None)
@@ -164,10 +171,14 @@ def child_environ(base: dict[str, str] | None = None) -> dict[str, str]:
     env.pop("OPENAI_BASE_URL", None)
     if env.get("OPENROUTER_API_KEY"):
         # Harbor interpolates ${OPENAI_API_KEY} and exits when the name is
-        # absent. Blank keeps that interpolation off the OpenRouter key.
-        env.setdefault("OPENAI_API_KEY", "")
-        if env.get("OPENAI_API_KEY") == env.get("OPENROUTER_API_KEY"):
-            env["OPENAI_API_KEY"] = ""
+        # absent. Blank keeps that interpolation off the OpenRouter key,
+        # except for an openai model, which Harbor will not launch without one.
+        if model and model.startswith("openai/"):
+            env["OPENAI_API_KEY"] = env["OPENROUTER_API_KEY"]
+        else:
+            env.setdefault("OPENAI_API_KEY", "")
+            if env.get("OPENAI_API_KEY") == env.get("OPENROUTER_API_KEY"):
+                env["OPENAI_API_KEY"] = ""
         runtime = str(Path(__file__).resolve().parents[2] / "runtime")
         prior = env.get("PYTHONPATH", "")
         env["PYTHONPATH"] = runtime if not prior else runtime + os.pathsep + prior
@@ -423,7 +434,7 @@ def _generate(
 ) -> Path:
     retries = int(settings.get("max_infrastructure_retries", config["max_infrastructure_retries"]))
     source = dataset_dir / "tasks" / slot["representative_task"]
-    env = child_environ()
+    env = child_environ(model=slot["model"])
     attempts_root = run_dir / "attempts" / slot_id
     recovered = _recover_existing_artifact(attempts_root)
     if recovered is not None:

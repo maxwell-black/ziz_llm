@@ -256,6 +256,7 @@ def test_retry_classifier_accepts_429_and_rejects_low_score():
     assert is_infrastructure_failure(status_code=500) is True
     assert is_infrastructure_failure(status_code=503) is True
     assert is_infrastructure_failure(kind="timeout") is True
+    assert is_infrastructure_failure(kind="missing_module") is True
     assert is_infrastructure_failure(kind="connection_error") is True
     assert is_infrastructure_failure(kind="low_score") is False
     assert is_infrastructure_failure(status_code=200, kind="low_score") is False
@@ -330,6 +331,12 @@ def test_child_environ_does_not_redirect_anthropic():
     assert "OPENAI_API_BASE" not in env
     assert "OPENAI_BASE_URL" not in env
     assert env["OPENAI_API_KEY"] == ""
+    routed = child_environ(
+        {"OPENROUTER_API_KEY": "present", "OPENAI_API_BASE": "https://openrouter.ai/api/v1"},
+        model="openai/gpt-5.4-mini",
+    )
+    assert routed["OPENAI_API_KEY"] == "present"
+    assert "OPENAI_API_BASE" not in routed
     assert env["PYTHONPATH"].startswith(str(Path(__file__).resolve().parents[1] / "runtime"))
     assert env["JUDGE_PANEL"] == ""
 
@@ -383,6 +390,7 @@ def test_harbor_argv_uses_shared_terminus_agent():
         jobs_dir=Path("/tmp/isolated/jobs"),
     )
     assert argv[:2] == ["harbor", "run"]
+    assert "--disable-verification" in argv
     assert "terminus-2" in argv
     assert "claude-code" not in argv
     assert "codex" not in argv
