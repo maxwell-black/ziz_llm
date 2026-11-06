@@ -102,6 +102,37 @@ def network_restriction_ready(sample_toml: str) -> bool:
     )
 
 
+def ensure_openrouter_verifier_env(text: str) -> str:
+    """Forward the OpenRouter key into the verifier.
+
+    The native judge id ``openai/gpt-5.4-mini`` is aliased to OpenRouter
+    inside the container. Anthropic and Gemini keep their own keys.
+    """
+    line = 'OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"\n'
+    if "OPENROUTER_API_KEY" in text:
+        return text
+    needle = 'GEMINI_API_KEY = "${GEMINI_API_KEY}"\n'
+    if needle not in text:
+        raise ValueError("verifier env has no GEMINI_API_KEY interpolation")
+    return text.replace(needle, needle + line, 1)
+
+
+def ensure_judge_routing(dockerfile: str) -> str:
+    """Put the OpenRouter alias on the interpreter path inside the image.
+
+    The same file is copied for every condition. Inference for the agent
+    stays on the host; this is for the verifier's judge process.
+    """
+    if "framing_runtime" in dockerfile:
+        return dockerfile
+    if not dockerfile.endswith("\n"):
+        dockerfile += "\n"
+    return dockerfile + (
+        "COPY framing_runtime/ /opt/framing-runtime/\n"
+        "ENV PYTHONPATH=/opt/framing-runtime\n"
+    )
+
+
 def ensure_terminus_packages(dockerfile: str) -> str:
     """Install tmux and asciinema in the task image.
 
@@ -157,13 +188,21 @@ def prepare_agent_workspace(
         raise RuntimeError("workspace contract does not match the dataset file")
     (task_dir / "instruction.md").write_text(transformed_instruction, encoding="utf-8")
     dockerfile = task_dir / "environment" / "Dockerfile"
+    runtime_src = Path(__file__).resolve().parents[2] / "runtime" / "sitecustomize.py"
+    runtime_dir = task_dir / "environment" / "framing_runtime"
+    runtime_dir.mkdir()
+    shutil.copyfile(runtime_src, runtime_dir / "sitecustomize.py")
     dockerfile.write_text(
-        ensure_terminus_packages(dockerfile.read_text(encoding="utf-8")),
+        ensure_judge_routing(
+            ensure_terminus_packages(dockerfile.read_text(encoding="utf-8"))
+        ),
         encoding="utf-8",
     )
     toml_path = task_dir / "task.toml"
     toml_path.write_text(
-        apply_network_restriction(toml_path.read_text(encoding="utf-8")),
+        ensure_openrouter_verifier_env(
+            apply_network_restriction(toml_path.read_text(encoding="utf-8"))
+        ),
         encoding="utf-8",
     )
     _reject_host_contamination(task_dir)

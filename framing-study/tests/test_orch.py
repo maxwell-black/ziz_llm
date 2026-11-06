@@ -29,8 +29,14 @@ from framing_study.catalog import (  # noqa: E402
     smoke_group,
 )
 from framing_study.cli import main  # noqa: E402
-from framing_study.isolate import apply_network_restriction, ensure_terminus_packages, redact  # noqa: E402
-from framing_study.runner import child_environ  # noqa: E402
+from framing_study.isolate import (  # noqa: E402
+    apply_network_restriction,
+    ensure_judge_routing,
+    ensure_openrouter_verifier_env,
+    ensure_terminus_packages,
+    redact,
+)
+from framing_study.runner import child_environ, panel_grade_is_complete  # noqa: E402
 from framing_study.manifest import build_manifest, open_manifest, save_manifest  # noqa: E402
 from framing_study.preflight import provider_env_report  # noqa: E402
 from framing_study.runner import (  # noqa: E402
@@ -326,6 +332,29 @@ def test_child_environ_does_not_redirect_anthropic():
     assert env["OPENAI_API_KEY"] == ""
     assert env["PYTHONPATH"].startswith(str(Path(__file__).resolve().parents[1] / "runtime"))
     assert env["JUDGE_PANEL"] == ""
+
+
+def test_verifier_routing_is_added_once(tmp_path: Path):
+    toml = 'GEMINI_API_KEY = "${GEMINI_API_KEY}"\n'
+    once = ensure_openrouter_verifier_env(toml)
+    assert once == ensure_openrouter_verifier_env(once)
+    assert 'OPENROUTER_API_KEY = "${OPENROUTER_API_KEY}"' in once
+    docker = ensure_judge_routing("FROM python:3.12-slim\n")
+    assert docker == ensure_judge_routing(docker)
+    assert "COPY framing_runtime/" in docker
+    panel = ["openai/gpt-5.4-mini", "anthropic/claude-haiku-4-5-20251001"]
+    complete = tmp_path / "grade.json"
+    complete.write_text(
+        '{"survivors": ["anthropic/claude-haiku-4-5-20251001", "openai/gpt-5.4-mini"], "judge_errors": []}',
+        encoding="utf-8",
+    )
+    dropped = tmp_path / "dropped.json"
+    dropped.write_text(
+        '{"survivors": ["anthropic/claude-haiku-4-5-20251001"], "judge_errors": [["openai/gpt-5.4-mini", "auth"]]}',
+        encoding="utf-8",
+    )
+    assert panel_grade_is_complete(complete, panel)
+    assert not panel_grade_is_complete(dropped, panel)
 
 
 def test_terminus_packages_are_added_once():

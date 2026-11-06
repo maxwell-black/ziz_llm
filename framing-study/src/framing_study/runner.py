@@ -189,6 +189,19 @@ def find_contract_artifact(jobs_dir: Path) -> Path | None:
     return artifacts[0]
 
 
+def panel_grade_is_complete(path: Path, judge_panel: list[str]) -> bool:
+    """True when every configured judge voted and none was dropped."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    survivors = payload.get("survivors")
+    errors = payload.get("judge_errors") or []
+    if not isinstance(survivors, list) or errors:
+        return False
+    return set(survivors) == set(judge_panel)
+
+
 def find_verifier_grade(jobs_dir: Path, task_name: str) -> Path | None:
     matches = [path for path in jobs_dir.glob(f"{task_name}__*/verifier/grade.json") if path.is_file()]
     if not matches:
@@ -507,7 +520,11 @@ def _grade_variants(
             continue
         dest = run_dir / "grades" / slot_id / task_id
         dest.mkdir(parents=True, exist_ok=True)
-        if task_id == representative and harbor_grade is not None:
+        if (
+            task_id == representative
+            and harbor_grade is not None
+            and panel_grade_is_complete(harbor_grade, judge_panel)
+        ):
             _import_verifier_dir(harbor_grade.parent, dest)
             _store_grade_file(
                 cache_dir,
