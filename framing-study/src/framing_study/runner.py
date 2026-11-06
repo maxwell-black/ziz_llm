@@ -179,10 +179,16 @@ def child_environ(base: dict[str, str] | None = None) -> dict[str, str]:
 
 
 def find_contract_artifact(jobs_dir: Path) -> Path | None:
+    """Return the edited contract Harbor collected.
+
+    Harbor nests it at ``artifacts/app/contract.docx``. The immediate parent
+    is ``app``, so the search is any ``contract.docx`` under an ``artifacts``
+    directory. The starting file in the task workspace is not under one.
+    """
     artifacts = [
         path
         for path in jobs_dir.rglob("contract.docx")
-        if path.parent.name == "artifacts" and path.is_file() and path.stat().st_size > 0
+        if "artifacts" in path.parts and path.is_file() and path.stat().st_size > 0
     ]
     if not artifacts:
         return None

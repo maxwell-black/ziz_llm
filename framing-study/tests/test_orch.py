@@ -36,7 +36,7 @@ from framing_study.isolate import (  # noqa: E402
     ensure_terminus_packages,
     redact,
 )
-from framing_study.runner import child_environ, panel_grade_is_complete  # noqa: E402
+from framing_study.runner import child_environ, find_contract_artifact, panel_grade_is_complete  # noqa: E402
 from framing_study.manifest import build_manifest, open_manifest, save_manifest  # noqa: E402
 from framing_study.preflight import provider_env_report  # noqa: E402
 from framing_study.runner import (  # noqa: E402
@@ -332,6 +332,16 @@ def test_child_environ_does_not_redirect_anthropic():
     assert env["OPENAI_API_KEY"] == ""
     assert env["PYTHONPATH"].startswith(str(Path(__file__).resolve().parents[1] / "runtime"))
     assert env["JUDGE_PANEL"] == ""
+
+
+def test_contract_artifact_is_found_under_artifacts_app(tmp_path: Path):
+    edited = tmp_path / "jobs" / "trial" / "artifacts" / "app" / "contract.docx"
+    edited.parent.mkdir(parents=True)
+    edited.write_bytes(b"edited")
+    start = tmp_path / "jobs" / "workspace" / "environment" / "app" / "contract.docx"
+    start.parent.mkdir(parents=True)
+    start.write_bytes(b"start")
+    assert find_contract_artifact(tmp_path / "jobs") == edited
 
 
 def test_verifier_routing_is_added_once(tmp_path: Path):
