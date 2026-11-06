@@ -331,6 +331,12 @@ def test_child_environ_does_not_redirect_anthropic():
     assert "OPENAI_API_BASE" not in env
     assert "OPENAI_BASE_URL" not in env
     assert env["OPENAI_API_KEY"] == ""
+    routed = child_environ(
+        {"OPENROUTER_API_KEY": "present", "OPENAI_API_BASE": "https://openrouter.ai/api/v1"},
+        model="openai/gpt-5.4-mini",
+    )
+    assert routed["OPENAI_API_KEY"] == "present"
+    assert "OPENAI_API_BASE" not in routed
     assert env["PYTHONPATH"].startswith(str(Path(__file__).resolve().parents[1] / "runtime"))
     assert env["JUDGE_PANEL"] == ""
 
