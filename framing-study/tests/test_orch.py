@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -13,7 +15,12 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from framing_study.budget import decide_spend, estimate_run  # noqa: E402
+from framing_study.budget import (  # noqa: E402
+    decide_spend,
+    estimate_run,
+    generation_cost_exceeds,
+    measure_generation_cost,
+)
 from framing_study.cache import (  # noqa: E402
     generation_cache_key,
     generation_cache_path,
@@ -40,6 +47,9 @@ from framing_study.runner import child_environ, find_contract_artifact, panel_gr
 from framing_study.manifest import build_manifest, open_manifest, save_manifest, study_settings  # noqa: E402
 from framing_study.preflight import provider_env_report  # noqa: E402
 from framing_study.runner import (  # noqa: E402
+    _SpendExceeded,
+    _call_execute,
+    _run_logged,
     harbor_run_argv,
     is_infrastructure_failure,
     study_results,
@@ -557,6 +567,221 @@ def test_report_without_a_manifest_writes_nothing(tmp_path, capsys):
     assert code == 1
     assert "no scored results" in captured.err
     assert list(tmp_path.rglob("report.md")) == []
+
+
+def _write_trajectory(
+    path: Path,
+    *,
+    model: str,
+    prompt: int,
+    completion: int,
+    cost_usd: float,
+    step_model: str | None = None,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    metrics = {"cost_usd": cost_usd}
+    if prompt or completion:
+        metrics["prompt_tokens"] = prompt
+        metrics["completion_tokens"] = completion
+    step: dict = {"source": "agent", "metrics": metrics}
+    if step_model:
+        step["model_name"] = step_model
+    payload = {
+        "agent": {"name": "terminus-2", "model_name": model},
+        "steps": [step],
+        "final_metrics": {
+            "total_prompt_tokens": prompt,
+            "total_completion_tokens": completion,
+            "total_cost_usd": cost_usd,
+        },
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_trajectory_over_spend_limit_is_detected_and_under_is_not(tmp_path: Path):
+    prices = {
+        "model-a": {"input": 1.0, "output": 5.0},
+        "anthropic/claude-haiku-4-5-20251001": {"input": 1.0, "output": 5.0},
+    }
+    under = tmp_path / "under"
+    _write_trajectory(
+        under / "agent" / "trajectory.json",
+        model="model-a",
+        prompt=1_000,
+        completion=1_000,
+        cost_usd=999.0,
+    )
+    measured = measure_generation_cost(under, prices)
+    assert measured["known"] is True
+    assert measured["prompt_tokens"] == 1_000
+    assert measured["completion_tokens"] == 1_000
+    assert measured["usd"] == pytest.approx(0.006)
+    assert generation_cost_exceeds(under, prices, 1.0) is False
+
+    alone = tmp_path / "alone"
+    _write_trajectory(
+        alone / "a" / "agent" / "trajectory.json",
+        model="model-a",
+        prompt=600_000,
+        completion=0,
+        cost_usd=0.0,
+    )
+    assert generation_cost_exceeds(alone, prices, 1.0) is False
+    over = tmp_path / "over"
+    _write_trajectory(
+        over / "a" / "agent" / "trajectory.json",
+        model="model-a",
+        prompt=600_000,
+        completion=0,
+        cost_usd=0.0,
+    )
+    _write_trajectory(
+        over / "b" / "agent" / "trajectory.json",
+        model="model-a",
+        prompt=600_000,
+        completion=0,
+        cost_usd=0.0,
+    )
+    combined = measure_generation_cost(over, prices)
+    assert combined["known"] is True
+    assert combined["prompt_tokens"] == 1_200_000
+    assert combined["usd"] == pytest.approx(1.2)
+    assert generation_cost_exceeds(over, prices, 1.0) is True
+
+    harbor_shape = tmp_path / "harbor"
+    _write_trajectory(
+        harbor_shape / "agent" / "trajectory.json",
+        model="anthropic/claude-haiku-4-5-20251001",
+        prompt=1_000_000,
+        completion=0,
+        cost_usd=0.01,
+        step_model="claude-haiku-4-5-20251001",
+    )
+    shaped = measure_generation_cost(harbor_shape, prices)
+    assert shaped["known"] is True
+    assert shaped["usd"] == pytest.approx(1.0)
+    assert generation_cost_exceeds(harbor_shape, prices, 1.0) is False
+
+    unpriced = tmp_path / "unpriced"
+    _write_trajectory(
+        unpriced / "agent" / "trajectory.json",
+        model="not-in-the-config",
+        prompt=5_000_000,
+        completion=0,
+        cost_usd=0.0,
+    )
+    unknown = measure_generation_cost(unpriced, prices)
+    assert unknown["known"] is False
+    assert unknown["usd"] is None
+    assert unknown["prompt_tokens"] == 5_000_000
+    assert "not-in-the-config" in unknown["missing_prices"]
+    assert generation_cost_exceeds(unpriced, prices, 1_000_000) is True
+    assert generation_cost_exceeds(tmp_path / "absent", prices, 0) is False
+
+
+def test_fake_execute_keeps_the_three_argument_contract(tmp_path: Path):
+    seen = {}
+
+    def execute(argv, env, log_dir):
+        seen["argc"] = execute.__code__.co_argcount
+        seen["argv"] = argv
+        return subprocess.CompletedProcess(argv, 7, "", "")
+
+    completed = _call_execute(
+        execute,
+        ["harbor", "run"],
+        {},
+        tmp_path,
+        watch_root=tmp_path,
+        prices={"model-a": {"input": 1.0, "output": 1.0}},
+        spend_limit=1.0,
+        model="model-a",
+    )
+    assert completed.returncode == 7
+    assert seen["argc"] == 3
+    assert seen["argv"] == ["harbor", "run"]
+    assert "max_turns" not in " ".join(seen["argv"])
+
+
+def test_running_process_stops_when_trajectory_exceeds_limit(tmp_path: Path):
+    root = tmp_path / "attempts"
+    pid_path = tmp_path / "child.pid"
+    script = tmp_path / "burn.py"
+    script.write_text(
+        "\n".join(
+            [
+                "import json, os, sys, time",
+                "from pathlib import Path",
+                "root = Path(sys.argv[1])",
+                "Path(sys.argv[2]).write_text(str(os.getpid()), encoding='utf-8')",
+                "dest = root / 'trial' / 'agent'",
+                "dest.mkdir(parents=True, exist_ok=True)",
+                "payload = {",
+                "  'agent': {'model_name': 'model-a'},",
+                "  'steps': [{'metrics': {'prompt_tokens': 2000000, 'completion_tokens': 0, 'cost_usd': 0.0}}],",
+                "  'final_metrics': {'total_prompt_tokens': 2000000, 'total_completion_tokens': 0, 'total_cost_usd': 0.0},",
+                "}",
+                "(dest / 'trajectory.json').write_text(json.dumps(payload), encoding='utf-8')",
+                "time.sleep(30)",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    prices = {"model-a": {"input": 1.0, "output": 5.0}}
+    with pytest.raises(_SpendExceeded):
+        _run_logged(
+            [sys.executable, str(script), str(root), str(pid_path)],
+            os.environ.copy(),
+            tmp_path / "logs",
+            watch_root=root,
+            prices=prices,
+            spend_limit=1.0,
+            model="model-a",
+            poll_seconds=0.05,
+        )
+    pid = int(pid_path.read_text(encoding="utf-8"))
+    with pytest.raises(ProcessLookupError):
+        os.kill(pid, 0)
+    assert generation_cost_exceeds(root, prices, 1.0) is True
+    assert "max_turns" not in (tmp_path / "logs" / "argv.txt").read_text(encoding="utf-8")
+
+
+def test_running_process_is_not_stopped_when_trajectory_is_under_limit(tmp_path: Path):
+    root = tmp_path / "attempts"
+    script = tmp_path / "finish.py"
+    script.write_text(
+        "\n".join(
+            [
+                "import json, sys",
+                "from pathlib import Path",
+                "root = Path(sys.argv[1])",
+                "dest = root / 'trial' / 'agent'",
+                "dest.mkdir(parents=True, exist_ok=True)",
+                "payload = {",
+                "  'agent': {'model_name': 'model-a'},",
+                "  'steps': [{'metrics': {'prompt_tokens': 1000, 'completion_tokens': 1000, 'cost_usd': 50.0}}],",
+                "  'final_metrics': {'total_cost_usd': 50.0},",
+                "}",
+                "(dest / 'trajectory.json').write_text(json.dumps(payload), encoding='utf-8')",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    prices = {"model-a": {"input": 1.0, "output": 5.0}}
+    completed = _run_logged(
+        [sys.executable, str(script), str(root)],
+        os.environ.copy(),
+        tmp_path / "logs",
+        watch_root=root,
+        prices=prices,
+        spend_limit=1.0,
+        model="model-a",
+        poll_seconds=0.05,
+    )
+    assert completed.returncode == 0
+    assert generation_cost_exceeds(root, prices, 1.0) is False
 
 
 def test_manifest_uses_pin_shas_when_present():
