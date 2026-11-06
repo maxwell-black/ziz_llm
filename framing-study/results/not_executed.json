@@ -3,9 +3,9 @@
   "official_reproduction": false,
   "model_results": null,
   "executed": false,
-  "smoke_executed": false,
+  "smoke_executed": true,
   "pilot_executed": false,
-  "reason": "No scored model outputs yet. A smoke generation may be in progress under runs/smoke, which is gitignored. The earlier preflight block (missing keys, Docker, and Harbor) is resolved. openai/gpt-5.4-mini is called through OpenRouter under the native model id. Do not read this file as a score.",
+  "reason": "The smoke report is framing-study/exports/smoke/report.md. It is a smoke on s2-t1-g01, not the scored pilot and not an official reproduction. This file is not a score. openai/gpt-5.4-mini is called through OpenRouter under the native model id. The scored pilot has not been written into this repository.",
   "blocked_reasons": [],
   "dataset_sha": "eee1b6790982ed1279e86bec7616b662a61993e6"
 }

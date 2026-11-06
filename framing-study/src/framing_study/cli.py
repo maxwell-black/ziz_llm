@@ -342,6 +342,11 @@ def cmd_report(args, config: dict) -> int:
         from framing_study.runner import study_results
 
         results = study_results(manifest, manifest_path.parent, Path(config["dataset_dir"]))
+        # study_results does not copy scope. The report reads this field so a
+        # later `report --scope smoke` rerun still labels the file as a smoke.
+        results["scope"] = manifest.get("scope") or args.scope
+    if args.scope and isinstance(results, dict) and not results.get("scope"):
+        results["scope"] = args.scope
     dest = Path(args.out) if args.out else Path(config["output_dir"]) / "report.md"
     written = write_report(results, dest)
     print(written)

@@ -37,7 +37,7 @@ from framing_study.isolate import (  # noqa: E402
     redact,
 )
 from framing_study.runner import child_environ, find_contract_artifact, panel_grade_is_complete  # noqa: E402
-from framing_study.manifest import build_manifest, open_manifest, save_manifest  # noqa: E402
+from framing_study.manifest import build_manifest, open_manifest, save_manifest, study_settings  # noqa: E402
 from framing_study.preflight import provider_env_report  # noqa: E402
 from framing_study.runner import (  # noqa: E402
     harbor_run_argv,
@@ -256,6 +256,7 @@ def test_retry_classifier_accepts_429_and_rejects_low_score():
     assert is_infrastructure_failure(status_code=500) is True
     assert is_infrastructure_failure(status_code=503) is True
     assert is_infrastructure_failure(kind="timeout") is True
+    assert is_infrastructure_failure(kind="missing_module") is True
     assert is_infrastructure_failure(kind="connection_error") is True
     assert is_infrastructure_failure(kind="low_score") is False
     assert is_infrastructure_failure(status_code=200, kind="low_score") is False
@@ -330,6 +331,12 @@ def test_child_environ_does_not_redirect_anthropic():
     assert "OPENAI_API_BASE" not in env
     assert "OPENAI_BASE_URL" not in env
     assert env["OPENAI_API_KEY"] == ""
+    routed = child_environ(
+        {"OPENROUTER_API_KEY": "present", "OPENAI_API_BASE": "https://openrouter.ai/api/v1"},
+        model="openai/gpt-5.4-mini",
+    )
+    assert routed["OPENAI_API_KEY"] == "present"
+    assert "OPENAI_API_BASE" not in routed
     assert env["PYTHONPATH"].startswith(str(Path(__file__).resolve().parents[1] / "runtime"))
     assert env["JUDGE_PANEL"] == ""
 
@@ -383,12 +390,14 @@ def test_harbor_argv_uses_shared_terminus_agent():
         jobs_dir=Path("/tmp/isolated/jobs"),
     )
     assert argv[:2] == ["harbor", "run"]
+    assert "--disable-verification" in argv
     assert "terminus-2" in argv
     assert "claude-code" not in argv
     assert "codex" not in argv
     assert "--agent-kwarg" not in argv
     joined = " ".join(argv)
     assert "STOCK" not in joined
+    assert "max_turns" not in joined
     assert "/tmp/isolated/tasks/redline-s1-t1-g01a" in joined
     capped = harbor_run_argv(
         task_dir=Path("/tmp/isolated/tasks/redline-s1-t1-g01a"),
@@ -400,6 +409,8 @@ def test_harbor_argv_uses_shared_terminus_agent():
     assert "--ak" in capped
     assert "max_turns=24" in capped
     assert "STOCK" not in " ".join(capped)
+    assert study_settings({"max_infrastructure_retries": 2})["max_turns"] is None
+    assert study_settings({"max_infrastructure_retries": 2, "max_turns": 24})["max_turns"] == 24
 
 
 def _temp_config(tmp_path: Path, text: str | None = None) -> Path:

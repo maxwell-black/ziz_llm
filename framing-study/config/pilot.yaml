@@ -13,7 +13,9 @@ seed: 20261105
 agent: terminus-2
 harbor_version: "0.25.0"
 max_infrastructure_retries: 2
-max_turns: 24
+# No max_turns. Each model reply already ends at EOS. The agent loop
+# stops when the model confirms the task is complete. The task's own
+# agent timeout (3600s) is the bound. A turn cap cut runs off mid-read.
 prices_usd_per_million:
   anthropic/claude-haiku-4-5-20251001:
     input: 1.0
