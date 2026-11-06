@@ -40,6 +40,8 @@ def render_report(results: dict) -> str:
         lines.append("")
     lines.append("# RedlineBench instruction experiment, not an official reproduction")
     lines.append("")
+    if _is_smoke(results):
+        lines.extend(_smoke_banner(summary))
     lines.extend(_pins(results, summary))
     lines.extend(_instruction(results))
     lines.extend(_scoring_note(summary))
@@ -53,6 +55,20 @@ def render_report(results: dict) -> str:
     lines.extend(_limits(summary))
     lines.extend(_examples(summary))
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _is_smoke(results: dict) -> bool:
+    return str(results.get("scope") or "").strip().lower() == "smoke"
+
+
+def _smoke_banner(summary: dict) -> list[str]:
+    groups = ", ".join(summary["input_groups"]) if summary["input_groups"] else "unknown"
+    return [
+        "This file is a smoke report for input group "
+        f"{groups}. It is a smoke, not the scored pilot, and not an official "
+        "RedlineBench reproduction. This report does not claim statistical significance.",
+        "",
+    ]
 
 
 def _pins(results: dict, summary: dict) -> list[str]:

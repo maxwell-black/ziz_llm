@@ -1,6 +1,6 @@
 # RedlineBench instruction experiment, not an official reproduction
 
-This file is a smoke report for group s2-t1-g01 (representative task redline-s2-t1-g01a). It is a smoke, not the scored pilot, and not an official RedlineBench reproduction. It does not claim statistical significance. Paired differences below are descriptive.
+This file is a smoke report for input group s2-t1-g01. It is a smoke, not the scored pilot, and not an official RedlineBench reproduction. This report does not claim statistical significance.
 
 ## Pins, models, harness, seed, repetitions
 
@@ -57,8 +57,8 @@ deltas:
 - openai/gpt-5.4-mini / s2-t1-g01: 0.027110
 
 missing pairs:
-- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: MATCHED_SOFTWARE_REPLACEMENT:missing; STOCK:missing
-- gemini/gemini-3.1-flash-lite / s2-t1-g01: STOCK:missing
+- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: MATCHED_SOFTWARE_REPLACEMENT:gate_failed; STOCK:gate_failed
+- gemini/gemini-3.1-flash-lite / s2-t1-g01: STOCK:gate_failed
 
 ## Secondary paired result
 
@@ -76,8 +76,8 @@ deltas:
 - openai/gpt-5.4-mini / s2-t1-g01: -0.029851
 
 missing pairs:
-- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: STOCK_PLUS_METAPHOR:missing; STOCK:missing
-- gemini/gemini-3.1-flash-lite / s2-t1-g01: STOCK_PLUS_METAPHOR:missing; STOCK:missing
+- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: STOCK_PLUS_METAPHOR:gate_failed; STOCK:gate_failed
+- gemini/gemini-3.1-flash-lite / s2-t1-g01: STOCK_PLUS_METAPHOR:gate_failed; STOCK:gate_failed
 
 ## Comparisons versus TASK_ONLY
 
@@ -92,8 +92,8 @@ deltas:
 - openai/gpt-5.4-mini / s2-t1-g01: -0.016234
 
 missing pairs:
-- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: STOCK:missing
-- gemini/gemini-3.1-flash-lite / s2-t1-g01: STOCK:missing; TASK_ONLY:gate_failed
+- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: STOCK:gate_failed
+- gemini/gemini-3.1-flash-lite / s2-t1-g01: STOCK:gate_failed; TASK_ONLY:gate_failed
 
 ### MATCHED_SOFTWARE_REPLACEMENT minus TASK_ONLY
 
@@ -106,7 +106,7 @@ deltas:
 - openai/gpt-5.4-mini / s2-t1-g01: 0.010877
 
 missing pairs:
-- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: MATCHED_SOFTWARE_REPLACEMENT:missing
+- anthropic/claude-haiku-4-5-20251001 / s2-t1-g01: MATCHED_SOFTWARE_REPLACEMENT:gate_failed
 - gemini/gemini-3.1-flash-lite / s2-t1-g01: TASK_ONLY:gate_failed
 
 ## Per-condition native means
@@ -138,8 +138,8 @@ Each cell is the input-group score: the mean of variant rewards for a generation
 
 | model | input group | STOCK | STOCK_PLUS_METAPHOR | MATCHED_SOFTWARE_REPLACEMENT | TASK_ONLY |
 | --- | --- | --- | --- | --- | --- |
-| anthropic/claude-haiku-4-5-20251001 | s2-t1-g01 | excluded (missing) | excluded (missing) | excluded (missing) | 0.000000 |
-| gemini/gemini-3.1-flash-lite | s2-t1-g01 | excluded (missing) | excluded (missing) | 0.000000 | excluded (gate_failed) |
+| anthropic/claude-haiku-4-5-20251001 | s2-t1-g01 | excluded (gate_failed) | excluded (gate_failed) | excluded (gate_failed) | 0.000000 |
+| gemini/gemini-3.1-flash-lite | s2-t1-g01 | excluded (gate_failed) | excluded (gate_failed) | 0.000000 | excluded (gate_failed) |
 | openai/gpt-5.4-mini | s2-t1-g01 | 0.029851 | 0.000000 | 0.056961 | 0.046085 |
 
 ## Failures, invalid documents, retries, missing judges
@@ -148,13 +148,18 @@ Gate failures and incomplete judge coverage are excluded from the native mean an
 
 | condition | expected | scored | gate failures | gate failure rate | missing judges | missing judge rate | invalid documents | missing results |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| STOCK | 3 | 1 | 0 | 0.000000 | 0 | 0.000000 | 0 | 2 |
-| STOCK_PLUS_METAPHOR | 3 | 1 | 0 | 0.000000 | 0 | 0.000000 | 0 | 2 |
-| MATCHED_SOFTWARE_REPLACEMENT | 3 | 2 | 0 | 0.000000 | 0 | 0.000000 | 0 | 1 |
+| STOCK | 3 | 1 | 2 | 0.666667 | 0 | 0.000000 | 0 | 0 |
+| STOCK_PLUS_METAPHOR | 3 | 1 | 2 | 0.666667 | 0 | 0.000000 | 0 | 0 |
+| MATCHED_SOFTWARE_REPLACEMENT | 3 | 2 | 1 | 0.333333 | 0 | 0.000000 | 0 | 0 |
 | TASK_ONLY | 3 | 2 | 1 | 0.333333 | 0 | 0.000000 | 0 | 0 |
 
 ### Gate failures
 
+- gate failure: anthropic/claude-haiku-4-5-20251001 / s2-t1-g01 / STOCK / repetition 0 / tracked changes 0.000000 / comments 0.000000
+- gate failure: anthropic/claude-haiku-4-5-20251001 / s2-t1-g01 / STOCK_PLUS_METAPHOR / repetition 0 / tracked changes 0.000000 / comments 0.000000
+- gate failure: anthropic/claude-haiku-4-5-20251001 / s2-t1-g01 / MATCHED_SOFTWARE_REPLACEMENT / repetition 0 / tracked changes 0.000000 / comments 0.000000
+- gate failure: gemini/gemini-3.1-flash-lite / s2-t1-g01 / STOCK / repetition 0 / tracked changes 0.000000 / comments 0.000000
+- gate failure: gemini/gemini-3.1-flash-lite / s2-t1-g01 / STOCK_PLUS_METAPHOR / repetition 0 / tracked changes 0.000000 / comments 0.000000
 - gate failure: gemini/gemini-3.1-flash-lite / s2-t1-g01 / TASK_ONLY / repetition 0 / tracked changes 0.000000 / comments 0.000000
 
 ### Missing judges
@@ -171,13 +176,7 @@ retries: none
 
 ### Missing results
 
-Schedule rows exist for every smoke model and condition. Five slots have no `grades/<slot>/<task>/grade.json` files. Those cells stay excluded. They are not filled with zeros.
-
-- missing grade files: anthropic/claude-haiku-4-5-20251001 / s2-t1-g01 / STOCK / repetition 0
-- missing grade files: anthropic/claude-haiku-4-5-20251001 / s2-t1-g01 / STOCK_PLUS_METAPHOR / repetition 0
-- missing grade files: anthropic/claude-haiku-4-5-20251001 / s2-t1-g01 / MATCHED_SOFTWARE_REPLACEMENT / repetition 0
-- missing grade files: gemini/gemini-3.1-flash-lite / s2-t1-g01 / STOCK / repetition 0
-- missing grade files: gemini/gemini-3.1-flash-lite / s2-t1-g01 / STOCK_PLUS_METAPHOR / repetition 0
+missing results: none
 
 ## Edit diagnostics
 
@@ -193,38 +192,17 @@ beside scored [TASK_ONLY]: n=2; mean tracked changes 11.000000; mean comments 5.
 
 Estimated and reported figures are separate. Unknown stays unknown. An estimate is not measured spend, and reported cost is not filled in from the estimate.
 
-The figure for the later pilot is the planning ceiling from `python -m framing_study cost`. It is not this smoke's invoice.
+### Estimated
 
-### Later pilot planning ceiling
-
-pilot total_usd: 48.960000
-pilot generation_usd: 20.736000
-pilot judging_usd: 28.224000
-pilot infra_usd: 0.000000
-in_flight_usd: 0.000000
-
-That ceiling uses the token ceilings and the prices in `config/pilot.yaml`. A later pilot run refuses unless `--spend-limit` covers 48.960000 while in-flight is 0.000000.
-
-### Estimated smoke ceiling
-
-estimated total_usd: 11.520000
-estimated generation_usd: 3.456000
-estimated judging_usd: 8.064000
-estimated infra_usd: 0.000000
+estimated total_usd: unknown
 estimated input_tokens: unknown
 estimated output_tokens: unknown
 
-### Reported generation spend
+### Reported
 
-Harbor recorded a generation total for all 12 smoke slots. Ten slots use job `stats.cost_usd`. Two slots have null `stats.cost_usd` and null token counters, so those two use trajectory `final_metrics` (`total_cost_usd`, `total_prompt_tokens`, `total_completion_tokens`). On the other ten slots those two sources match. No slot is counted twice.
-
-reported generation total_usd: 0.819347
-reported generation input_tokens: 2712149
-reported generation output_tokens: 77744
-
-The unrounded sum of the 12 recorded JSON cost numbers is 0.819346699999999981, which rounds half-up to 0.819347 at six decimal places. The two trajectory-only slots are anthropic/claude-haiku-4-5-20251001 TASK_ONLY (0.12451079999999999 USD, 369600 prompt tokens, 10320 completion tokens) and gemini/gemini-3.1-flash-lite MATCHED_SOFTWARE_REPLACEMENT (0.010645499999999999 USD, 48900 prompt tokens, 2604 completion tokens).
-
-Judge calls did not record token counts or USD. reported total_usd for generation plus judging is unknown. It is not filled from the 11.520000 smoke ceiling or from the 48.960000 pilot ceiling.
+reported total_usd: unknown
+reported input_tokens: unknown
+reported output_tokens: unknown
 
 ## Human audit
 
