@@ -102,6 +102,9 @@ def harbor_run_argv(
         "--jobs-dir",
         str(jobs_dir),
         "--yes",
+        # The egress sidecar breaks TLS to the judge APIs. The same
+        # tests/judge.py runs on the host after the contract is collected.
+        "--disable-verification",
     ]
     if max_turns is not None:
         argv.extend(["--ak", f"max_turns={int(max_turns)}"])

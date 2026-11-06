@@ -383,6 +383,7 @@ def test_harbor_argv_uses_shared_terminus_agent():
         jobs_dir=Path("/tmp/isolated/jobs"),
     )
     assert argv[:2] == ["harbor", "run"]
+    assert "--disable-verification" in argv
     assert "terminus-2" in argv
     assert "claude-code" not in argv
     assert "codex" not in argv
