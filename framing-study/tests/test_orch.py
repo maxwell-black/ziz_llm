@@ -256,6 +256,7 @@ def test_retry_classifier_accepts_429_and_rejects_low_score():
     assert is_infrastructure_failure(status_code=500) is True
     assert is_infrastructure_failure(status_code=503) is True
     assert is_infrastructure_failure(kind="timeout") is True
+    assert is_infrastructure_failure(kind="missing_module") is True
     assert is_infrastructure_failure(kind="connection_error") is True
     assert is_infrastructure_failure(kind="low_score") is False
     assert is_infrastructure_failure(status_code=200, kind="low_score") is False

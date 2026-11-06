@@ -47,7 +47,7 @@ def is_infrastructure_failure(*, status_code: int | None = None, kind: str | Non
     """
     if kind in {"low_score", "bad_score", "validity_gate", "integrity", "other"}:
         return False
-    if kind in {"timeout", "connection_error", "http_429", "http_5xx"}:
+    if kind in {"timeout", "connection_error", "http_429", "http_5xx", "missing_module"}:
         return True
     if status_code == 429:
         return True
@@ -66,6 +66,8 @@ def classify_process_failure(returncode: int, stderr: str) -> str | None:
         return "timeout"
     if _CONNECTION.search(text):
         return "connection_error"
+    if "ModuleNotFoundError" in text or "No module named" in text:
+        return "missing_module"
     if _HTTP_5XX.search(text) and "reward" not in text.lower():
         return "http_5xx"
     return "other"
