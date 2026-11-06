@@ -1,0 +1,49 @@
+# Three providers, one Harbor terminus-2 harness. openai/gpt-5.4-mini is
+# called with OPENAI_API_BASE=https://openrouter.ai/api/v1 because Drive
+# has an OpenRouter key and no platform.openai.com key. Prices are the
+# OpenRouter catalog per-token rates converted to USD per million tokens
+# on 2026-11-05 (anthropic/claude-haiku-4.5, google/gemini-3.1-flash-lite,
+# openai/gpt-5.4-mini). They are list prices, not measured invoices.
+models:
+  - anthropic/claude-haiku-4-5-20251001
+  - gemini/gemini-3.1-flash-lite
+  - openai/gpt-5.4-mini
+repetitions: 1
+seed: 20261105
+agent: terminus-2
+harbor_version: "0.25.0"
+max_infrastructure_retries: 2
+max_turns: 24
+prices_usd_per_million:
+  anthropic/claude-haiku-4-5-20251001:
+    input: 1.0
+    output: 5.0
+  gemini/gemini-3.1-flash-lite:
+    input: 0.25
+    output: 1.5
+  openai/gpt-5.4-mini:
+    input: 0.75
+    output: 4.5
+allows_uncontrolled_egress: false
+judge_panel:
+  - gpt-5.4-mini
+  - claude-haiku-4-5-20251001
+  - gemini-3.1-flash-lite
+cache_dir: .cache/framing-study
+dataset_dir: .cache/redlinebench
+output_dir: runs
+spend_limit: null
+audit_sample_size: 2
+comparisons:
+  - name: primary
+    treatment: MATCHED_SOFTWARE_REPLACEMENT
+    control: STOCK
+  - name: secondary
+    treatment: STOCK_PLUS_METAPHOR
+    control: STOCK
+  - name: stock_vs_task_only
+    treatment: STOCK
+    control: TASK_ONLY
+  - name: matched_vs_task_only
+    treatment: MATCHED_SOFTWARE_REPLACEMENT
+    control: TASK_ONLY

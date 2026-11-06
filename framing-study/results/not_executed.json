@@ -1,0 +1,11 @@
+{
+  "study": "RedlineBench instruction-framing pilot",
+  "official_reproduction": false,
+  "model_results": null,
+  "executed": false,
+  "smoke_executed": false,
+  "pilot_executed": false,
+  "reason": "No scored model outputs yet. A smoke generation may be in progress under runs/smoke, which is gitignored. The earlier preflight block (missing keys, Docker, and Harbor) is resolved. openai/gpt-5.4-mini is called through OpenRouter under the native model id. Do not read this file as a score.",
+  "blocked_reasons": [],
+  "dataset_sha": "eee1b6790982ed1279e86bec7616b662a61993e6"
+}

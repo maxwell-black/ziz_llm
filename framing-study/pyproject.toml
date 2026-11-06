@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "framing-study"
+version = "0.1.0"
+description = "A study of instruction framing on a pinned RedlineBench revision."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml",
+    "huggingface_hub",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+# Distribution name on the pin is redlinebench (repository redline-bench).
+# PEP 508 direct reference, parsed by packaging.requirements.Requirement.
+benchmark = [
+    "redlinebench @ git+https://github.com/crosbylegal/redline-bench.git@b29d1113af5d98e2d577f4f17673ebb72834f107",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
