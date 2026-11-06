@@ -46,6 +46,131 @@ def _token_cost(input_tokens: int, output_tokens: int, rates: tuple[float, float
     return (input_tokens / 1_000_000) * incoming + (output_tokens / 1_000_000) * outgoing
 
 
+def _trajectory_paths(root: Path) -> list[Path]:
+    if not root.exists():
+        return []
+    if root.is_file():
+        return [root] if root.name == "trajectory.json" else []
+    return [path for path in root.rglob("trajectory.json") if path.is_file()]
+
+
+def _load_trajectory(path: Path) -> dict | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return payload
+
+
+def _model_name(node: dict, fallback: str | None) -> str | None:
+    agent = node.get("agent")
+    if isinstance(agent, dict):
+        name = agent.get("model_name")
+        if isinstance(name, str) and name:
+            return name
+    return fallback
+
+
+def _token_count(value: object) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if value < 0:
+        return None
+    return int(value)
+
+
+def _walk_trajectory_tokens(node: dict, fallback: str | None):
+    """Yield (model, prompt_tokens, completion_tokens) for one trajectory tree.
+
+    Step ``model_name`` is not a price key. Harbor's ``cost_usd`` is not read.
+    """
+    if not isinstance(node, dict):
+        return
+    model = _model_name(node, fallback)
+    for step in node.get("steps") or []:
+        if not isinstance(step, dict):
+            continue
+        metrics = step.get("metrics")
+        if not isinstance(metrics, dict):
+            continue
+        prompt = _token_count(metrics.get("prompt_tokens"))
+        completion = _token_count(metrics.get("completion_tokens"))
+        if prompt is None and completion is None:
+            continue
+        yield model, prompt or 0, completion or 0
+    for child in node.get("subagent_trajectories") or []:
+        if isinstance(child, dict):
+            yield from _walk_trajectory_tokens(child, fallback)
+
+
+def measure_generation_cost(
+    root: Path,
+    prices: dict,
+    *,
+    model: str | None = None,
+) -> dict:
+    """Price prompt and completion tokens found in ``trajectory.json`` files.
+
+    Rates are ``prices_usd_per_million`` through ``_token_cost``. Harbor's
+    own ``cost_usd`` is ignored. Tokens whose model has no config rate make
+    the result unknown. Unknown is not returned as zero.
+    """
+    totals: dict[str | None, list[int]] = {}
+    for path in _trajectory_paths(root):
+        payload = _load_trajectory(path)
+        if payload is None:
+            continue
+        for priced_as, prompt, completion in _walk_trajectory_tokens(payload, model):
+            if prompt == 0 and completion == 0:
+                continue
+            bucket = totals.setdefault(priced_as, [0, 0])
+            bucket[0] += prompt
+            bucket[1] += completion
+
+    prompt_tokens = 0
+    completion_tokens = 0
+    missing: list[str] = []
+    total = 0.0
+    known = True
+    for priced_as, (prompt, completion) in totals.items():
+        prompt_tokens += prompt
+        completion_tokens += completion
+        rates = _rates(prices, priced_as) if priced_as else None
+        if rates is None:
+            known = False
+            missing.append(priced_as or "unknown model")
+            continue
+        total += _token_cost(prompt, completion, rates)
+    return {
+        "known": known,
+        "usd": round(total, 6) if known else None,
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "missing_prices": sorted(set(missing)),
+    }
+
+
+def generation_cost_exceeds(
+    root: Path,
+    prices: dict,
+    spend_limit: float,
+    *,
+    model: str | None = None,
+) -> bool:
+    """True when measured generation cost is over the limit.
+
+    A missing price is not treated as zero: observed tokens that cannot be
+    priced block the run. No trajectory yet is a known zero, which does not
+    exceed a non-negative limit.
+    """
+    measured = measure_generation_cost(root, prices, model=model)
+    if not measured["known"] or measured["usd"] is None:
+        return measured["prompt_tokens"] > 0 or measured["completion_tokens"] > 0
+    return measured["usd"] > spend_limit + 1e-9
+
+
 def estimate_run(
     *,
     prices: dict,

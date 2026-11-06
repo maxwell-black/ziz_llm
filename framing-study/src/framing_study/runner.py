@@ -12,11 +12,17 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 from pathlib import Path
 
-from framing_study.budget import PLANNING_ASSUMPTIONS, decide_spend, estimate_run
+from framing_study.budget import (
+    PLANNING_ASSUMPTIONS,
+    decide_spend,
+    estimate_run,
+    generation_cost_exceeds,
+)
 from framing_study.cache import (
     generation_cache_key,
     grade_cache_key,
@@ -226,20 +232,152 @@ def find_verifier_grade(jobs_dir: Path, task_name: str) -> Path | None:
     return matches[0] if matches else None
 
 
-def _run_logged(argv: list[str], env: dict[str, str], log_dir: Path) -> subprocess.CompletedProcess:
+_TRAJECTORY_POLL_SECONDS = 2.0
+
+
+class _SpendExceeded(RuntimeError):
+    """Measured generation cost passed the spend limit. Do not start another slot."""
+
+
+def _write_process_logs(
+    log_dir: Path,
+    argv: list[str],
+    stdout: str,
+    stderr: str,
+    returncode: int,
+) -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
     (log_dir / "argv.txt").write_text(redact(" ".join(argv)) + "\n", encoding="utf-8")
-    completed = subprocess.run(
+    (log_dir / "stdout.txt").write_text(redact(stdout or ""), encoding="utf-8")
+    (log_dir / "stderr.txt").write_text(redact(stderr or ""), encoding="utf-8")
+    (log_dir / "returncode.txt").write_text(str(returncode) + "\n", encoding="utf-8")
+
+
+def _terminate_process_group(proc: subprocess.Popen, sig: int = signal.SIGTERM) -> None:
+    """Signal the Harbor session started with ``start_new_session``."""
+    if proc.poll() is not None:
+        return
+    try:
+        os.killpg(proc.pid, sig)
+    except ProcessLookupError:
+        return
+    except PermissionError:
+        try:
+            proc.send_signal(sig)
+        except ProcessLookupError:
+            return
+
+
+def _collect_output(proc: subprocess.Popen, timeout: float) -> tuple[str, str]:
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        _terminate_process_group(proc, signal.SIGKILL)
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            stdout, stderr = exc.stdout, exc.stderr
+            if proc.poll() is None:
+                try:
+                    proc.kill()
+                except ProcessLookupError:
+                    pass
+            for pipe in (proc.stdout, proc.stderr):
+                if pipe is not None and not pipe.closed:
+                    pipe.close()
+            try:
+                proc.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                pass
+    return stdout or "", stderr or ""
+
+
+def _run_logged(
+    argv: list[str],
+    env: dict[str, str],
+    log_dir: Path,
+    *,
+    watch_root: Path | None = None,
+    prices: dict | None = None,
+    spend_limit: float | None = None,
+    model: str | None = None,
+    poll_seconds: float = _TRAJECTORY_POLL_SECONDS,
+) -> subprocess.CompletedProcess:
+    """Run a child and record redacted logs.
+
+    When ``watch_root`` and ``spend_limit`` are set, this is the real Harbor
+    process. Trajectory files under ``watch_root`` are polled until the
+    process exits. Measured generation cost over the limit terminates that
+    process group and raises ``_SpendExceeded``.
+    """
+    if watch_root is None or spend_limit is None:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        (log_dir / "argv.txt").write_text(redact(" ".join(argv)) + "\n", encoding="utf-8")
+        completed = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+        )
+        (log_dir / "stdout.txt").write_text(redact(completed.stdout or ""), encoding="utf-8")
+        (log_dir / "stderr.txt").write_text(redact(completed.stderr or ""), encoding="utf-8")
+        (log_dir / "returncode.txt").write_text(str(completed.returncode) + "\n", encoding="utf-8")
+        return completed
+
+    proc = subprocess.Popen(
         argv,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
         text=True,
         env=env,
-        check=False,
+        start_new_session=True,
     )
-    (log_dir / "stdout.txt").write_text(redact(completed.stdout or ""), encoding="utf-8")
-    (log_dir / "stderr.txt").write_text(redact(completed.stderr or ""), encoding="utf-8")
-    (log_dir / "returncode.txt").write_text(str(completed.returncode) + "\n", encoding="utf-8")
-    return completed
+    exceeded = False
+    stdout, stderr = "", ""
+    try:
+        while True:
+            if generation_cost_exceeds(
+                watch_root,
+                prices or {},
+                float(spend_limit),
+                model=model,
+            ):
+                exceeded = True
+                _terminate_process_group(proc)
+                break
+            try:
+                stdout, stderr = proc.communicate(timeout=poll_seconds)
+                break
+            except subprocess.TimeoutExpired:
+                continue
+        if proc.poll() is None:
+            stdout, stderr = _collect_output(proc, 5)
+    except Exception:
+        if proc.poll() is None:
+            _terminate_process_group(proc, signal.SIGKILL)
+            try:
+                proc.communicate(timeout=5)
+            except Exception:
+                pass
+        raise
+    returncode = proc.returncode if proc.returncode is not None else -signal.SIGKILL
+    _write_process_logs(log_dir, argv, stdout or "", stderr or "", returncode)
+    if exceeded:
+        raise _SpendExceeded("measured generation cost exceeds spend limit")
+    return subprocess.CompletedProcess(argv, returncode, stdout or "", stderr or "")
+
+
+def _call_execute(execute, argv: list[str], env: dict[str, str], log_dir: Path, **watch):
+    """Call an injected execute callable with the original three arguments.
+
+    Spend polling is part of the real Harbor process only. A test double
+    does not have to be a subprocess and does not receive watch arguments.
+    """
+    if execute is _run_logged:
+        return _run_logged(argv, env, log_dir, **watch)
+    return execute(argv, env, log_dir)
 
 
 def _slot_estimate(slot: dict, prices: dict, judge_panel: list[str]) -> float | None:
@@ -296,6 +434,12 @@ def run_saved_manifest(
         if slot_id in manifest.get("completed_slots", []):
             continue
         try:
+            if generation_cost_exceeds(
+                run_dir / "attempts",
+                config["prices_usd_per_million"],
+                spend_limit,
+            ):
+                raise _SpendExceeded("measured generation cost exceeds spend limit")
             _run_slot(
                 slot,
                 slot_id=slot_id,
@@ -312,6 +456,11 @@ def run_saved_manifest(
                 run_id=run_id,
                 execute=execute or _run_logged,
             )
+        except _SpendExceeded as exc:
+            failures += 1
+            with (run_dir / "failures.txt").open("a", encoding="utf-8") as handle:
+                handle.write(redact(f"{slot_id}: {exc}\n"))
+            return 1
         except _SlotFailure as exc:
             failures += 1
             with (run_dir / "failures.txt").open("a", encoding="utf-8") as handle:
@@ -475,7 +624,30 @@ def _generate(
             n_concurrent=int(settings.get("n_concurrent") or 1),
             max_turns=settings.get("max_turns"),
         )
-        completed = execute(argv, env, attempt_dir / "logs")
+        if generation_cost_exceeds(
+            run_dir / "attempts",
+            config["prices_usd_per_million"],
+            spend_limit,
+            model=slot["model"],
+        ):
+            raise _SpendExceeded("measured generation cost exceeds spend limit")
+        completed = _call_execute(
+            execute,
+            argv,
+            env,
+            attempt_dir / "logs",
+            watch_root=run_dir / "attempts",
+            prices=config["prices_usd_per_million"],
+            spend_limit=spend_limit,
+            model=slot["model"],
+        )
+        if generation_cost_exceeds(
+            run_dir / "attempts",
+            config["prices_usd_per_million"],
+            spend_limit,
+            model=slot["model"],
+        ):
+            raise _SpendExceeded("measured generation cost exceeds spend limit")
         artifact = find_contract_artifact(jobs_dir)
         if artifact is not None:
             shutil.copy2(artifact, output_contract)
