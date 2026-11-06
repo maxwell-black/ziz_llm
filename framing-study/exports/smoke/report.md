@@ -208,6 +208,18 @@ reported output_tokens: unknown
 
 No human audit entries.
 
+## Why six cells have no edits
+
+Six validity-gate failures on s2-t1-g01 are documents with no tracked changes and no review comments. The saved contract matches the file Harbor collected from the container, and that file matches the starting template. Cells that did edit were collected by the same path and are not the template.
+
+Anthropic stock, the metaphor add-on, and matched wording each spent the shared 24-turn cap reading the contract and the playbook. Those traces never call propose_edits.py. The cap stopped them while they were still reading. That is a censored run, not a finished choice to leave the document unchanged. Anthropic task-only did call propose_edits.py. That contract changed, the gate passed, and the panel score is 0.
+
+Gemini stock, the metaphor add-on, and task-only called propose_edits.py and then marked the task complete. The script accepts a positional edits file, which is what the task instruction documents. Those runs passed --edits, which the script rejects, or a shell line bash rejected because of an unquoted parenthesis. Gemini matched wording later used a positional JSON file. That contract changed, the gate passed, and the panel score is 0.
+
+OpenAI produced edits in all four conditions. It found scripts/propose_edits.py and passed an edits file.
+
+No implementation defect was found in artifact collection, the edit script, or the validity gate. The six cells stay as observations. The smoke was not rerun.
+
 ## Limits
 
 Semantic match is a judgment. Condition 2 adds text. Condition 4 retains residual coaching. Judge variability can change a rubric vote. Public data contamination can affect generations on published contracts. This file contains 1 input groups. The study is limited to six input groups. The compared conditions use a shared harness. This report makes no claim about internal mechanisms or about all legal work.

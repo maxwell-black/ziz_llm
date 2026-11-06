@@ -329,6 +329,29 @@ def test_fixture_excludes_gate_failure_and_keeps_primary_first(results, tmp_path
     assert "0.050000" in examples
 
 
+def test_smoke_report_records_why_no_edit_cells_stay(tmp_path):
+    payload = {
+        "synthetic": False,
+        "scope": "smoke",
+        "models": ["m"],
+        "input_groups": ["s2-t1-g01"],
+        "harness": "terminus-2",
+        "seed": 1,
+        "repetitions": 1,
+        "records": [],
+        "usage": {"estimated": {"total_usd": None}, "reported": {"total_usd": None}},
+        "human_audit": [],
+    }
+    text = write_report(payload, tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "Why six cells have no edits" in text
+    assert "never call propose_edits.py" in text
+    assert "The smoke was not rerun." in text
+    plain = dict(payload)
+    plain["scope"] = "pilot"
+    pilot = write_report(plain, tmp_path / "pilot.md").read_text(encoding="utf-8")
+    assert "Why six cells have no edits" not in pilot
+
+
 def test_non_synthetic_report_has_no_banner(tmp_path):
     payload = {
         "synthetic": False,
